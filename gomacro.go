@@ -7,7 +7,9 @@
 package gomacro
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 )
 
 type Macro struct {
@@ -16,6 +18,7 @@ type Macro struct {
 
 type macro struct {
 	expansion string
+	args      []string
 	re        *regexp.Regexp
 }
 
@@ -28,14 +31,50 @@ func NewMacro() *Macro {
 
 // Add a new, or overwrites an existing macro definition.
 func (m *Macro) Define(key, expansion string) error {
-	re, err := regexp.Compile(key)
+	// keys can be in the form of:
+	//	literal : ^[:alnum:]+$
+	//	function: ^[:alnum:]\\([:alnum:]+(,[:alnum:])*\\)$
+	var err error
+	var k string
+	ret := &macro{
+		expansion: expansion,
+	}
+	matchLiteral, err := regexp.MatchString("^[a-zA-Z0-9]+$", key)
 	if err != nil {
 		return err
 	}
-	m.macros[key] = &macro{
-		expansion: expansion,
-		re:        re,
+	matchFunction, err := regexp.MatchString("^[a-zA-Z0-9]+\\([a-zA-Z0-9]+(,[a-zA-Z0-9]+)*\\)$", key)
+	if err != nil {
+		return err
 	}
+
+	if matchLiteral {
+		k = key
+		ret.re, err = regexp.Compile(key)
+		if err != nil {
+			return err
+		}
+	} else if matchFunction {
+		f := strings.Split(key, "(")
+		f[len(f)-1] = strings.Trim(f[len(f)-1], ")")
+		ret.args = f[1:]
+		k = f[0]
+		r := k + "\\("
+		for i, _ := range ret.args {
+			if i != 0 {
+				r += ","
+			}
+			r += "[a-zA-Z0-9]+"
+		}
+		r += "\\)"
+		ret.re, err = regexp.Compile(r)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("invalid macro: %v", key)
+	}
+	m.macros[k] = ret
 	return nil
 }
 
@@ -66,10 +105,29 @@ func (m *Macro) Macro(key string) string {
 // Parse input text with set macros.
 func (m *Macro) Parse(input string) string {
 	for _, v := range m.macros {
-		output := v.re.ReplaceAllString(input, v.expansion)
+		output := v.re.ReplaceAllStringFunc(input, v.expand)
 		if input != output {
 			return m.Parse(output)
 		}
 	}
 	return input
+}
+
+func (m *macro) expand(input string) string {
+	if len(m.args) == 0 {
+		fmt.Println(input)
+		return m.expansion
+	}
+	// create a new macro with the parametric args and parse it
+	f := strings.Split(input, "(")
+	f[len(f)-1] = strings.Trim(f[len(f)-1], ")")
+	args := f[1:]
+	nm := NewMacro()
+	for i, v := range m.args {
+		err := nm.Define(v, args[i])
+		if err != nil {
+			return ""
+		}
+	}
+	return nm.Parse(m.expansion)
 }
