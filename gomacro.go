@@ -7,23 +7,36 @@
 package gomacro
 
 import (
-	"strings"
+	"regexp"
 )
 
 type Macro struct {
-	macros map[string]string
+	macros map[string]*macro
+}
+
+type macro struct {
+	expansion string
+	re        *regexp.Regexp
 }
 
 // Return a new, empty macro parsing object.
 func NewMacro() *Macro {
 	return &Macro{
-		macros: make(map[string]string),
+		macros: make(map[string]*macro),
 	}
 }
 
 // Add a new, or overwrites an existing macro definition.
-func (m *Macro) Define(key, expansion string) {
-	m.macros[key] = expansion
+func (m *Macro) Define(key, expansion string) error {
+	re, err := regexp.Compile(key)
+	if err != nil {
+		return err
+	}
+	m.macros[key] = &macro{
+		expansion: expansion,
+		re:        re,
+	}
+	return nil
 }
 
 // Remove an existing macro definition.
@@ -44,17 +57,17 @@ func (m *Macro) List() []string {
 
 // Return the macro text for a given key.
 func (m *Macro) Macro(key string) string {
-	return m.macros[key]
+	if v, ok := m.macros[key]; ok {
+		return v.expansion
+	}
+	return ""
 }
 
 // Parse input text with set macros.
 func (m *Macro) Parse(input string) string {
-	// simple replace, preserves whitespace
-	for k, v := range m.macros {
-		output := strings.Replace(input, k, v, -1)
-		if input == output {
-			continue
-		} else {
+	for _, v := range m.macros {
+		output := v.re.ReplaceAllString(input, v.expansion)
+		if input != output {
 			return m.Parse(output)
 		}
 	}
