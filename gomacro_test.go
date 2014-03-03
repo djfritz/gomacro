@@ -1,15 +1,15 @@
 // Copyright 2014 David Fritz. All rights reserved.
-// 
+//
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the Free
 // Software Foundation, either version 3 of the License, or (at your option)
 // any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful, but WITHOUT
 // ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 // FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 // more details.
-// 
+//
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -26,14 +26,14 @@ func TestDefine(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	got := m.Macro("key")
+	_, got := m.Macro("key")
 	want := "value"
 	if got != want {
 		t.Errorf("define got \"%v\", wanted \"%v\"", got, want)
 	}
 
 	// also test getting something that shouldn't exist
-	got = m.Macro("foo")
+	_, got = m.Macro("foo")
 	want = ""
 	if got != want {
 		t.Errorf("Define got \"%v\", wanted \"%v\"", got, want)
@@ -44,7 +44,7 @@ func TestUndefine(t *testing.T) {
 	m := NewMacro()
 	m.Define("key", "value")
 	m.Undefine("key")
-	got := m.Macro("key")
+	_, got := m.Macro("key")
 	want := ""
 	if got != want {
 		t.Errorf("Undefine got \"%v\", wanted \"%v\"", got, want)
@@ -68,7 +68,7 @@ func TestList(t *testing.T) {
 func TestMacro(t *testing.T) {
 	m := NewMacro()
 	m.Define("key", "value")
-	got := m.Macro("key")
+	_, got := m.Macro("key")
 	want := "value"
 	if got != want {
 		t.Errorf("Macro got \"%v\", wanted \"%v\"", got, want)
