@@ -73,8 +73,11 @@ func (m *Macro) Define(key, expansion string) error {
 		}
 	} else if matchFunction {
 		f := strings.Split(key, "(")
-		f[len(f)-1] = strings.Trim(f[len(f)-1], ")")
-		ret.args = f[1:]
+		if len(f) != 2 {
+			return fmt.Errorf("malformed key %v", key)
+		}
+		f[1] = strings.Trim(f[1], ")")
+		ret.args = strings.Split(f[1], ",")
 		k = f[0]
 		ret.original = key
 		r := k + "\\("
@@ -85,6 +88,7 @@ func (m *Macro) Define(key, expansion string) error {
 			r += "[a-zA-Z0-9]+"
 		}
 		r += "\\)"
+		fmt.Println(r)
 		ret.re, err = regexp.Compile(r)
 		if err != nil {
 			return err
@@ -137,8 +141,11 @@ func (m *macro) expand(input string) string {
 	}
 	// create a new macro with the parametric args and parse it
 	f := strings.Split(input, "(")
-	f[len(f)-1] = strings.Trim(f[len(f)-1], ")")
-	args := f[1:]
+	if len(f) != 2 {
+		return ""
+	}
+	f[1] = strings.Trim(f[1], ")")
+	args := strings.Split(f[1], ",")
 	nm := NewMacro()
 	for i, v := range m.args {
 		err := nm.Define(v, args[i])

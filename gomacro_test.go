@@ -122,6 +122,19 @@ func TestParseFunctionCompound(t *testing.T) {
 	got := m.Parse("this is key(my) key")
 	want := "this is foo my key"
 	if got != want {
-		t.Errorf("ParseFunction got \"%v\", wanted \"%v\"", got, want)
+		t.Errorf("ParseFunctionCompound got \"%v\", wanted \"%v\"", got, want)
+	}
+}
+
+func TestParseFunctionMulti(t *testing.T) {
+	m := NewMacro()
+	err := m.Define("key(val1,val2)", "value val2 val1")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	got := m.Parse("this key(my,is) key")
+	want := "this value is my key"
+	if got != want {
+		t.Errorf("ParseFunctionMulti got \"%v\", wanted \"%v\"", got, want)
 	}
 }
