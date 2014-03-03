@@ -88,7 +88,6 @@ func (m *Macro) Define(key, expansion string) error {
 			r += "[a-zA-Z0-9]+"
 		}
 		r += "\\)"
-		fmt.Println(r)
 		ret.re, err = regexp.Compile(r)
 		if err != nil {
 			return err
