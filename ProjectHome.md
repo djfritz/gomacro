@@ -1,0 +1,1 @@
+Simple textual macro expansion in Go
